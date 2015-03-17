@@ -6,16 +6,9 @@
 <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
-<!--
 <link href="http://www.51qiguai.com/mobile/css/ratchet.min.css" rel="stylesheet">
 <link href="http://www.51qiguai.com/mobile/css/css.css" rel="stylesheet">
 <link href="http://www.51qiguai.com/mobile/css/style.css" rel="stylesheet">
-<script src="http://www.51qiguai.com/mobile/js/jquery.js"></script><style type="text/css"></style>
--->
-<link href="http://www.51qiguai.com/mobile/css/ratchet.min.css" rel="stylesheet">
-<link href="./css/css.css" rel="stylesheet">
-<link href="./css/style.css" rel="stylesheet">
 <script src="http://www.51qiguai.com/mobile/js/jquery.js"></script><style type="text/css"></style>
 </head>
 <body>
@@ -25,10 +18,10 @@
     广州大学城  </h1>
 </header>
 <nav class="bar bar-tab"> 
-	<!--a class="tab-item" href="#" data-ignore="push" style="color: rgb(48, 113, 169);"> <span class="icon icon-list"></span> <span class="tab-label">买东西</span> </a><-->
-	<a class="tab-item" href="./" data-ignore="push"> <span class="icon icon-pages"></span> <span class="tab-label">主页</span> </a>
-    <a class="tab-item" href="./carts.php" data-ignore="push"> <span class="icon icon-star"></span> <span class="tab-label">购物车</span> </a>
-    <!--a class="tab-item" href="#" data-ignore="push"> <span class="icon icon-person"></span> <span class="tab-label">个人中心</span> </a><-->
+	<a class="tab-item" href="#" data-ignore="push" style="color: rgb(48, 113, 169);"> <span class="icon icon-list"></span> <span class="tab-label">买东西</span> </a>
+    <a class="tab-item" href="#" data-ignore="push"> <span class="icon icon-star"></span> <span class="tab-label">购物车</span> </a>
+    <a class="tab-item" href="#" data-ignore="push"> <span class="icon icon-pages"></span> <span class="tab-label">公告栏</span> </a>
+    <a class="tab-item" href="#" data-ignore="push"> <span class="icon icon-person"></span> <span class="tab-label">个人中心</span> </a>
    </nav>
 <script type="application/javascript" src="./js/jquery.infinitescroll.js"></script>
 <script type="text/javascript">
@@ -64,6 +57,7 @@ $(function(){
     <ul class="table-view list_main" id="waterfall">
 <?php
 	error_reporting(0);
+	include 'db.php';
 	class goodsDetail{
 		public $goodsId;
 		public $goodsName;
@@ -71,24 +65,16 @@ $(function(){
 		public $price;
 		public $photo;
 		public $stock;
-		public $curNum;
 	};
 	class products{
 		private $pageNum; //当前页数
 		private $db;
-		private $user;
 		private $goodsArray = array();
 		public function __construct(){
-			include_once 'db.php';
-			include_once 'common/createCount.php';
 			$this->db = new MysqlDB("supermarket");
 		}
 		private function init(){
-			$this->pageNum = $_GET['page'];
-			if($this->pageNum == 0)
-				$this->pageNum =1;
-			$c = new Counter();
-			$this->user = $c->getUser();
+			$pageNum = $_GET['page'];
 			$ret = $this->db->connectDb();
 			if($ret)
 				return true;
@@ -98,7 +84,7 @@ $(function(){
 			if(!$goodsInfo) return;
 			echo '<li class="table-view-cell product-list wfc"> 
 			<span class="product-show">
-			<img class="media-object pull-left showBig" data-role="'.$goodsInfo->goodsName.'" src="'.$goodsInfo->photo.'" style="width:100px">
+			<img class="media-object pull-left showBig" data-role="'.$goodsInfo->goodsName.'" src="'.$goodsInfo->photo.'">
 			<div class="media-body">
 			<div class="name">
           	    <u class="label hui">惠</u>';
@@ -109,13 +95,8 @@ $(function(){
           </div>
           <!-- 按钮 -->
           <div class="carts">
-                                            <input type="button" value="-" class="plus btn white" data-role="'.$goodsInfo->goodsId.'@'.$goodsInfo->goodsName.'@'.$goodsInfo->price.'@'.$goodsInfo->stock.'@97@1@64">';
-			if($goodsInfo->curNum == 0 )
-			echo '
-            <span id="thisnum"></span>';
-			else
-				echo '<span id="thisnum">'.$goodsInfo->curNum.'</span>';
-			echo '
+                                            <input type="button" value="-" class="plus btn white" data-role="'.$goodsInfo->goodsId.'@'.$goodsInfo->goodsName.'@'.$goodsInfo->price.'@'.$goodsInfo->stock.'@97@1@64">
+            <span id="thisnum"></span>
             <input type="button" class="btn white add" value="+" data-role="'.$goodsInfo->goodsId.'@'.$goodsInfo->goodsName.'@'.$goodsInfo->price.'@'.$goodsInfo->stock.'@97@1@64">
                                            </div>
         </div>
@@ -123,21 +104,8 @@ $(function(){
         </span> </li>';
 			
 		}
-		
-		private function getCartsGoods(){
-			$sql = "select goodsId,goodsNum from shopcarts where tUserId ='".$this->user."'";
-			$ret = $this->db->queryDb($sql);
-			$cartsArray = array();
-			while($row = mysql_fetch_array($ret)){				
-				$cartsArray[$row[0]] = $row[1];
-			}
-			return $cartsArray;
-		}
-		
-		public function getGoodsDetail($num,$cartsArray){
-			$minId = 1110 + $num*($this->pageNum - 1);
-			$maxId = 1111+$num*($this->pageNum - 1) + 10;
-			$sql = "select * from goodsdetail where goodsId > ".$minId." and goodsId <".$maxId." limit  ".$num;
+		public function getGoodsDetail($num){
+			$sql = "select * from goodsdetail limit ".$num;
 			$ret = $this->db->queryDb($sql);
 			$i = 0;
 			while($row = mysql_fetch_array($ret)){				
@@ -147,18 +115,13 @@ $(function(){
 				$this->goodsArray[$i]->price = $row[3];
 				$this->goodsArray[$i]->photo = $row[4];
 				$this->goodsArray[$i]->stock = $row[6];
-				if($cartsArray[$row[0]] != 0)
-					$this->goodsArray[$i]->curNum = $cartsArray[$row[0]];
-				else 
-					$this->goodsArray[$i]->curNum = 0;
 				$this->echoList($this->goodsArray[$i]);
 			}
 		}
 		public function main(){
 			$ret = $this->init();
 			if($ret){
-				$cartsArray = $this->getCartsGoods();
-				$this->getGoodsDetail(10,$cartsArray);
+				$this->getGoodsDetail(10);
 			}
 		}
 	}
@@ -169,7 +132,7 @@ $(function(){
 ?>
 </ul>
         <div class="loading text-middle-show" style="border:none;"><img src="./img/loading.gif"> 更多商品加载中哟...</div>   
-	<div id="navigation" style="display:none;"><a href="./main.php?page=1"></a></div>
+	<div id="navigation" style="display:none;"><a href="http://localhost/html/main.php?page=1"></a></div>
   	  </div>
   <!-- END LIST -->
   <!--END SCROLLER  -->
@@ -178,7 +141,7 @@ $(function(){
 <div class="bottom_tip">
   <div class="tip_wrap">
     <!-- 有产品加入购物车时显示 -->
-    <p class="J_order_count"> <span style="vertical-align:middle;"><span id="tnum"></span>个商品，共计￥<span id="tprice"></span> &nbsp;&nbsp;</span> <a class="btn btn-negative btn-outlined" href="./carts.php" data-ignore="push" style="vertical-align:middle;">选好了</a> </p>
+    <p class="J_order_count"> <span style="vertical-align:middle;"><span id="tnum"></span>个商品，共计￥<span id="tprice"></span> &nbsp;&nbsp;</span> <a class="btn btn-negative btn-outlined" href="#" data-ignore="push" style="vertical-align:middle;">选好了</a> </p>
   </div>
 </div>
 <!-- END TIPS -->
@@ -187,7 +150,7 @@ $(function(){
   <div class="memu_block">
     <ul id="memu_list">
      <li>
-     	<div class=" current"><a href="./main.php?page=1" class="memuname" data-ignore="push">全部商品</a></div>
+     	<div class=" current"><a href="http://localhost/html/main.php?page=1" class="memuname" data-ignore="push">全部商品</a></div>
      </li>
       </li>
             <li class="memu_space"></li>
